@@ -3,7 +3,10 @@ Searching the web should be easy. DuckDunk provides dead simple DuckDuckGo query
 
 ## Installation
 
-Pip install coming soon.
+Easily install with pip through PyPI:
+```
+pip install duckdunk
+```
 
 ## Usage
 
@@ -25,7 +28,9 @@ print(results[0].text())
 ```python
 import duckdunk
 
+# Obtain images with metadata (title, source, thumbnail, original image, etc)
 results = duckdunk.image_search('cat')
+# Quickly view one of the results
 img = results[0].download()
 img.show()
 ```
