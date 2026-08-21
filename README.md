@@ -1,29 +1,54 @@
 # DuckDunk
-Dead simple DuckDuckGo querying for webpages and images
+Searching the web should be easy. DuckDunk provides dead simple DuckDuckGo querying for webpages and images.
 
-----
 ## Installation
 
-### TODO
-
+Pip install coming soon.
 
 ## Usage
-The module downloads as little as possible to reduce the request load. Searching web pages only takes a single line:
 
-```
+### Using site search results:
+```python
 import duckdunk
 
-results = duckdunk.search('cat facts')
+# Searches with DuckDuckGo and returns the result list
+results = duckdunk.web_search('cat facts')
+# Obtain information such as the URL, title, and snippet from each result:
+print(results[0].title)
 print(results[0].url)
+# If you just want to downlaod the page text:
+print(results[0].text())
 ```
 
-Searching images takes an extra step:
+### Using image search results:
 
-```
+```python
 import duckdunk
 
-results = duckdunk.image_search('cats')
+results = duckdunk.image_search('cat')
 img = results[0].download()
 img.show()
-
 ```
+
+## About
+
+There are a LOT of DuckDuckGo search packages for Python. However, they 
+either lack support for features, or focus on a specific use case. Moreover, 
+most of these packages are very old and outdated.
+The goal of this project is to bring a complete set of web search tools to Python, 
+currently through the use of the DuckDuckGo search engine. Right now the aim
+is to support most essential DuckDuckGo features through a human-friendly library.
+
+## A word of warning
+
+Requests will be very slow, and a purposely delayed. Sending multiple requests 
+to DuckDuckGo will almost always fail. On top of that, too many of these
+problematic requests and DuckDuckGo will temporarily block the client. (A day or longer)
+
+If you don't plan to make many requests, this delay can be removed. Just keep
+in mind that I have had requests fail without a delay.: 
+```duckdunk.web_search('cat facts', delay=0)```
+
+
+The downloads for image previews from Bing could probably be threaded safely,
+but for the time being they will be slow.
