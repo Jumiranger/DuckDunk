@@ -158,7 +158,7 @@ def _get_tjs_params(query) -> list[tuple[str, str]]:
     ]
 
 def resolve_duckduckgo(query: str) -> str:
-    res = requests.post('https://duckduckgo.com/', data={'q': query}, headers=headers.DEFAULT)
+    res = requests.post('https://duckduckgo.com/', data={'q': query}, headers=headers.ALTERNATE)
     return res.text
 
 def _exp_web_search(query, delay: int = 1):
@@ -295,8 +295,8 @@ def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', si
         ('ct', js['ct']), # country
         # ('dp', tjs['dp']),
         ('f', flags), # f : filters (key:value,)
-        # ('bpia', '1'),
-        # ('a', 'h_'),
+        ('bpia', '1'),
+        ('a', 'h_'),
         # ('v7exp', 'a'), 
     )
 
