@@ -144,13 +144,13 @@ class DuckExternalLink:
         self.snippet = snippet
         """A preview of the page"""
 
-    def soup(self) -> BeautifulSoup:
+    def soup(self, headers=None) -> BeautifulSoup:
         """Downloads and parses the HTML from the external link."""
-        return download_soup(self.url)
+        return download_soup(self.url, headers)
 
-    def text(self) -> str:
+    def text(self, headers=None) -> str:
         """Downloads text from the external link."""
-        return self.soup().text
+        return self.soup(headers).text
 
 def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
     """
