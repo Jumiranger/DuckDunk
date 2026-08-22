@@ -46,14 +46,12 @@ is to support most essential DuckDuckGo features through a human-friendly librar
 
 ## A word of warning
 
-Requests will be very slow, and a purposely delayed. Sending multiple requests 
-to DuckDuckGo will almost always fail. On top of that, too many of these
-problematic requests and DuckDuckGo will temporarily block the client. (A day or longer)
+Requests are purposely delayed. Sending many simultaneous requests 
+to DuckDuckGo will almost always fail. Too many of these
+problematic requests, and DuckDuckGo will temporarily block the client.
 
-If you don't plan to make many requests, this delay can be removed. Just keep
-in mind that I have had requests fail without a delay.: 
+If you don't plan to make many requests, this delay can be removed: 
 ```duckdunk.web_search('cat facts', delay=0)```
 
-
 The downloads for image previews from Bing could probably be threaded safely,
-but for the time being they will be slow.
+but for the time being they are downloaded one at a time.
