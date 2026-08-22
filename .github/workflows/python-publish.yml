@@ -48,7 +48,7 @@ jobs:
       - build
     runs-on: ubuntu-latest
     environment:
-      name: env
+      name: pypi
     permissions:
       id-token: write
     steps:
