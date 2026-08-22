@@ -1,0 +1,4 @@
+pillow
+beautifulsoup4
+requests
+w3lib
