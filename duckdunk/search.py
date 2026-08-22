@@ -152,6 +152,11 @@ class DuckExternalLink:
         """Downloads text from the external link."""
         return self.soup(headers).text
 
+class PageRefusalException(Exception):
+    """Exception for when the client is detected as a bot."""
+    def __init__(self, text: str):
+        super().__init__(text)
+
 def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
     """
     Performs a web search using DuckDuckGo and returns the result list.
@@ -174,10 +179,14 @@ def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
     url = f'http://duckduckgo.com/html/?q={query}'
     listing = download_soup(url, DEFAULT_HEADERS)
 
+    containers = listing.find_all('div', {'class': re.compile('links_main*')})
+    if len(containers) == 0:
+        raise PageRefusalException("Client was detected as a bot. Either too many requests were sent, the search failed, or invalid headers were sent.")
+
     results = []
     # Every result in the list is in a `div` of class "links_main"
     # So, a "links_main" class is a container for the title, url, icon, and snippet.
-    for links in listing.find_all('div', {'class': re.compile('links_main*')}):
+    for links in containers:
         # The title has the class "result__a" for some reason
         title_obj = links.find('a', {'class': re.compile('result__a')})
         assert title_obj != None
