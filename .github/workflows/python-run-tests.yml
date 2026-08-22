@@ -9,29 +9,23 @@ permissions:
   contents: read
 
 jobs:
-  setup:
+  test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v6
       - name: Setup Python # Set Python version
         uses: actions/setup-python@v5
         with:
           python-version: 3.13
-        
-  test:
-    needs:
-      - setup
-    runs-on: ubuntu-latest
-    steps:
+      
       - name: Test with pytest
         run: |
           pip install pytest
-          pytest
+          pytest --junitxml=output/test/test-results.xml
           
       - name: Upload pytest test results
         uses: actions/upload-artifact@v4
         with:
           name: pytest-results
           path: output/test/test-results.xml
+        if: ${{ always() }}
