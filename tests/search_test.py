@@ -9,11 +9,11 @@ class TestDownloads():
             assert type(data) == bytes
 
     def test_bytes_wikipedia(self):
-        data = duckdunk.download('https://en.wikipedia.org/', duckdunk.DEFAULT_HEADERS)
+        data = duckdunk.download('https://en.wikipedia.org/', duckdunk.headers.DEFAULT)
         assert type(data) == bytes
 
     def test_soup_wikipedia(self):
-        data = duckdunk.download_soup('https://en.wikipedia.org/', duckdunk.DEFAULT_HEADERS)
+        data = duckdunk.download_soup('https://en.wikipedia.org/', duckdunk.headers.DEFAULT)
         assert type(data) == BeautifulSoup
 
     def test_image_wikimedia(self):
@@ -27,7 +27,7 @@ class TestMiscDuckDuckGo():
         assert type(duckdunk.download('https://duckduckgo.com/')) == bytes
 
     def test_connect_with_headers(self):
-        data = duckdunk.download('https://duckduckgo.com/', duckdunk.DEFAULT_HEADERS)
+        data = duckdunk.download('https://duckduckgo.com/', duckdunk.headers.DEFAULT)
         assert type(data) == bytes 
 
     def test_get_vqd(self):
@@ -42,7 +42,7 @@ class TestWebSearch():
     def test_download_search_result_site(self):
          results = duckdunk.web_search('cat facts')
          assert len(results) > 0
-         data = duckdunk.download(results[0].url, duckdunk.DEFAULT_HEADERS)
+         data = duckdunk.download(results[0].url, duckdunk.headers.DEFAULT)
          assert type(data) == bytes
 
 class TestImageSearch():

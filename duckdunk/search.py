@@ -5,8 +5,9 @@ from bs4 import BeautifulSoup
 from PIL import Image
 import json
 import time
-from download import download_image, download_soup, DEFAULT_HEADERS
-import util
+import duckdunk.headers as headers
+from duckdunk.download import download_image, download_soup
+import duckdunk.util as util
 
 class DuckImage:
     def __init__(self, encoding: str, width: int, height: int, thumbnail: str, url: str, title: str, image: str):
@@ -177,11 +178,12 @@ def get_vqd(query) -> str:
     return _get_all_javascript_var(resolve_duckduckgo(query))['vqd']
 
 def _exp_web_search(query, delay: int = 1):
+    """Maybe new web search method. For some reason the returned JavaScript has empty values."""
     params = _get_djs_keyvals(query)
     time.sleep(0.2)
     res = requests.get(
             'https://duckduckgo.com/d.js', 
-            headers=DEFAULT_HEADERS, 
+            headers=headers.DUCKDUCKGO_WEB_SEARCH, 
             params=params
             )
     return res.text
@@ -206,7 +208,7 @@ def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
 
     # The search is made directly with a GET request
     url = f'http://duckduckgo.com/html/?q={query}'
-    listing = download_soup(url, DEFAULT_HEADERS)
+    listing = download_soup(url, headers.DEFAULT)
 
     containers = listing.find_all('div', {'class': re.compile('links_main*')})
     if len(containers) == 0:
@@ -311,7 +313,7 @@ def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', si
     # Attempts downloading the data
     res = requests.get(
         'https://duckduckgo.com/i.js', 
-        headers=DEFAULT_HEADERS, 
+        headers=headers.DUCKDUCKGO_IMAGE_SEARCH, 
         params=params
         )
     data = json.loads(res.text);
