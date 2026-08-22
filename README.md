@@ -3,7 +3,7 @@ Searching the web should be easy. DuckDunk provides dead simple DuckDuckGo query
 
 ## Installation
 
-Easily install with pip through PyPI:
+Easily install with pip through [PyPI](https://pypi.org/project/duckdunk/):
 ```
 pip install duckdunk
 ```
