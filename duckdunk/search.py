@@ -1,93 +1,12 @@
 import json
-from urllib.request import Request, urlopen
-from w3lib.url import canonicalize_url
 import requests
 import re
 from bs4 import BeautifulSoup
 from PIL import Image
-import io
 import json
 import time
-import logging
-
-DEFAULT_HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-       'Accept': 'image/gif,image/apng,image/avif,image/webp,image/png,image/jpeg,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-       'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-       'Accept-Encoding': 'none',
-       'Accept-Language': 'en-US,en;q=0.8',
-       'Connection': 'keep-alive'}
-"""Headers must be sent to most websites to say: "I'm not a bot."""
-
-def download(url: str, headers=None) -> bytes:
-    """
-    Downloads bytes from the web.
-
-    Args:
-        url: The url to download data from.
-
-    Returns:
-        A bytes object.
-    """
-    url = canonicalize_url(url)
-    logging.debug("Downloading " + url)
-
-    if headers:
-        req = Request(url, headers=headers)
-    else:
-        req = Request(url)
-
-    with urlopen(req) as response:
-        result = response.read()
-    return result
-
-def download_soup(url: str, headers=None) -> BeautifulSoup:
-    """
-    Downloads a BeautifulSoup object for HTML from the web.
-
-    Args:
-        url: The url to download the HTML from.
-
-    Returns:
-        A BeautifulSoup object for HTML parsing.
-    """
-    result = download(url, headers)
-    decoded = result.decode("utf-8")
-    return BeautifulSoup(decoded,  features="html.parser")
-
-def download_image(url: str, headers=None) -> Image.Image:
-    """
-    Downloads an image from the web.
-
-    Args:
-        url: The url to download the image from.
-    Returns:
-        A Pillow Image object which can be saved.
-    """
-    result = download(url, headers)
-    return Image.open(io.BytesIO(result))
-
-def get_vqd(query) -> str:
-    """
-    Obtains the VQD key from DuckDuckGo
-     
-    The VQD key is required for image 
-    search requests. Just put the query
-    for the image request into here
-    to use the key later.
-
-    Args:
-        query: The search query. This should be the same 
-            as the search query for the image search request.
-    
-    """
-
-    res = requests.post('https://duckduckgo.com/', data={'q': query})
-    searchObj = re.search(r'vqd=\"(.+?)\"', res.text)
-    
-    if not searchObj:
-        raise Exception("VQD variable was not present.")
-
-    return searchObj.group(1)
+from download import download_image, download_soup, DEFAULT_HEADERS
+import util
 
 class DuckImage:
     def __init__(self, encoding: str, width: int, height: int, thumbnail: str, url: str, title: str, image: str):
@@ -157,6 +76,116 @@ class PageRefusalException(Exception):
     def __init__(self, text: str):
         super().__init__(text)
 
+def _get_all_tjs(text) -> dict[str, str]:
+    """Get all variables sent to DuckDuckGo's t.js"""
+    return util.extract_dict(text, r'/t\.js\?', r'></script>', '&', '=')
+
+def _get_all_javascript_var(text) -> dict[str, str]:
+    """Get unlabeled variables from DuckDuckGo"""
+    return util.extract_dict(
+        text, r'<script type="text/javascript">var ', r';function', ',', '=')
+
+def _get_djs_keyvals(query) -> dict[str, str]:
+    """Obtains the variables required to invoke d.js on DuckDuckGo"""
+    res = requests.post('https://duckduckgo.com/', data={'q': query})
+    text = res.text
+    tjs = _get_all_tjs(text)
+    js = _get_all_javascript_var(text)
+    return {
+        'q': tjs['q'],
+        't': 'D', # tjs['t'] this variable is not always present
+        'kl': tjs['l'],
+        'l': tjs['l'],
+        's': tjs['s'],
+        'a': js['ra'],
+        'ct': tjs['ct'],
+        'vqd': js['vqd'],
+        'bing_market': tjs['bing_market'],
+        'p_ent': tjs['p_ent'],
+        'ex': tjs['ex'],
+        'dp': tjs['dp'],
+        'perf_id': tjs['perf_id'],
+        'parent_perf_id': tjs['parent_perf_id'],
+        'perf_sampled': tjs['perf_sampled'],
+        'host_region': tjs['host_region'],
+        'sp': "0",# tjs['sp'], These following variables return empty instead of their correct values
+        'dfrsp': "1", # tjs['dfrsp'],
+        'wrap': "1",# tjs['wrap'],
+        'aps': "0", # tjs['aps'],
+        'biaexp': 'b',
+        'desktopadclickablecontentexp': 'b',
+        'discussionsciexp': 'b',
+        'litexp': 'a',
+        'msvrtexp': 'b',
+        'searchbarexp': 'b',
+        'weatherexp': 'b',
+        'you_news_verticalexp': 'b',
+    }
+
+def _get_tjs_vals(query) -> dict[str, str]:
+    """Obtains the variables required to invoke t.js on DuckDuckGo"""
+    res = requests.post('https://duckduckgo.com/', data={'q': query})
+    text = res.text
+    tjs = _get_all_tjs(text)
+    js = _get_all_javascript_var(text)
+    return {
+        'q': tjs['q'],
+        't': 'D', # tjs['t']
+        'l': tjs['l'],
+        's': tjs['s'],
+        'a': js['ra'],
+        'ct': tjs['ct'],
+        'bing_market': tjs['bing_market'],
+        'p_ent': tjs['p_ent'],
+        'ex': tjs['ex'],
+        'dp': tjs['dp'],
+        'perf_id': tjs['perf_id'],
+        'parent_perf_id': tjs['parent_perf_id'],
+        'perf_sampled': tjs['perf_sampled'],
+        'host_region': tjs['host_region'],
+        'sp': "0",# tjs['sp'],
+        'baa': '1',
+        'aps': "0", # tjs['aps'],
+        'biaexp': 'b',
+        'desktopadclickablecontentexp': 'b',
+        'discussionsciexp': 'b',
+        'litexp': 'a',
+        'msvrtexp': 'b',
+        'searchbarexp': 'b',
+        'weatherexp': 'b',
+        'you_news_verticalexp': 'b',
+    }
+
+def resolve_duckduckgo(query) -> str:
+    res = requests.post('https://duckduckgo.com/', data={'q': query})
+    return res.text
+
+def get_vqd(query) -> str:
+    """
+    Obtains the VQD key from DuckDuckGo
+     
+    The VQD key is required for image 
+    search requests. Just put the query
+    for the image request into here
+    to use the key later.
+
+    Args:
+        query: The search query. This should be the same 
+            as the search query for the image search request.
+    
+    """
+    return _get_all_javascript_var(resolve_duckduckgo(query))['vqd']
+
+def _exp_web_search(query, delay: int = 1):
+    params = _get_djs_keyvals(query)
+    time.sleep(0.2)
+    res = requests.get(
+            'https://duckduckgo.com/d.js', 
+            headers=DEFAULT_HEADERS, 
+            params=params
+            )
+    return res.text
+
 def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
     """
     Performs a web search using DuckDuckGo and returns the result list.
@@ -209,10 +238,16 @@ def _validate_flag_enum(flag, valid: tuple) -> str:
     flag = str(flag).title()
     if flag != 'any':
         if type(flag) != str:
-            raise TypeError(f"Argument 'time' has incorrect type \"{type(flag)}\", should be str.")
+            raise TypeError(f"Argument has incorrect type \"{type(flag)}\", should be str.")
         if flag not in valid:
             raise ValueError(f"Time \"{flag}\" is not valid. Should be one of: {valid}")
     return flag
+
+def _try_add_string_flag(key, flag, valid: tuple):
+    flag = _validate_flag_enum(flag, valid)
+    if flag != 'Any':
+        return f',{key}:{flag}'
+    return ''
 
 def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', size: str = 'Any', layout: str = 'Any', locale='us-en', delay: int = 1) -> list[DuckImage]:
     """
@@ -257,18 +292,10 @@ def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', si
     # Flags are assembled directly in a string
     flags = f'hide_ai_images:{int(hide_ai_images)}'
 
-    time_range = _validate_flag_enum(time_range, ('Any', 'Day', 'Week', 'Month'))
-    if time_range != 'Any':
-        flags += ',time:{time}'
-
-    size = _validate_flag_enum(size, ('Any', 'Small', 'Medium', 'Large', 'Wallpaper'))
-    if size != 'Any':
-        flags += ',size:{size}'
-
-    # layout:Square
-    layout = _validate_flag_enum(layout, ('Any', 'Square', 'Tall', 'Wide'))
-    if layout != 'Any':
-            flags += ',layout:{layout}'
+    # Add any valid flags that aren't "Any"
+    flags += _try_add_string_flag('time', time_range, ('Any', 'Day', 'Week', 'Month'))
+    flags += _try_add_string_flag('size', size, ('Any', 'Small', 'Medium', 'Large', 'Wallpaper'))
+    flags += _try_add_string_flag('layout', layout, ('Any', 'Square', 'Tall', 'Wide'))
 
     # Parameters sent with the POST request
     params = (
@@ -289,7 +316,7 @@ def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', si
         )
     data = json.loads(res.text);
 
-    # Reassembles the dict list as an array of DuckImages
+    # Reassembles the dict list as an array of DuckImage objects
     items = []
     for item in data['results']:
         items.append(
