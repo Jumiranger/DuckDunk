@@ -21,6 +21,7 @@ jobs:
       - name: Test with pytest
         run: |
           pip install pytest
+          pip install -r requirements.txt
           pytest --junitxml=output/test/test-results.xml
           
       - name: Upload pytest test results
