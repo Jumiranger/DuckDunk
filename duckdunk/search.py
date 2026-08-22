@@ -86,100 +86,84 @@ def _get_all_javascript_var(text) -> dict[str, str]:
     return util.extract_dict(
         text, r'<script type="text/javascript">var ', r';function', ',', '=')
 
-def _get_djs_keyvals(query) -> dict[str, str]:
+def _get_djs_params(query) -> list[tuple[str, str]]:
     """Obtains the variables required to invoke d.js on DuckDuckGo"""
     res = requests.post('https://duckduckgo.com/', data={'q': query})
     text = res.text
     tjs = _get_all_tjs(text)
     js = _get_all_javascript_var(text)
-    return {
-        'q': tjs['q'],
-        't': 'D', # tjs['t'] this variable is not always present
-        'kl': tjs['l'],
-        'l': tjs['l'],
-        's': tjs['s'],
-        'a': js['ra'],
-        'ct': tjs['ct'],
-        'vqd': js['vqd'],
-        'bing_market': tjs['bing_market'],
-        'p_ent': tjs['p_ent'],
-        'ex': tjs['ex'],
-        'dp': tjs['dp'],
-        'perf_id': tjs['perf_id'],
-        'parent_perf_id': tjs['parent_perf_id'],
-        'perf_sampled': tjs['perf_sampled'],
-        'host_region': tjs['host_region'],
-        'sp': "0",# tjs['sp'], These following variables return empty instead of their correct values
-        'dfrsp': "1", # tjs['dfrsp'],
-        'wrap': "1",# tjs['wrap'],
-        'aps': "0", # tjs['aps'],
-        'biaexp': 'b',
-        'desktopadclickablecontentexp': 'b',
-        'discussionsciexp': 'b',
-        'litexp': 'a',
-        'msvrtexp': 'b',
-        'searchbarexp': 'b',
-        'weatherexp': 'b',
-        'you_news_verticalexp': 'b',
-    }
+    return [
+        ('q', tjs['q']),
+        ('t', 'D'), # tjs['t'] this variable is not always present
+        ('kl', tjs['l']),
+        ('l', tjs['l']),
+        ('s', tjs['s']),
+        ('a', js['ra']),
+        ('ct', tjs['ct']),
+        ('vqd', js['vqd']),
+        ('bing_market', tjs['bing_market']),
+        ('p_ent', tjs['p_ent']),
+        ('ex', tjs['ex']),
+        ('dp', tjs['dp']),
+        ('perf_id', tjs['perf_id']),
+        ('parent_perf_id', tjs['parent_perf_id']),
+        ('perf_sampled', tjs['perf_sampled']),
+        ('host_region', tjs['host_region']),
+        ('sp', "0"),# tjs['sp']), These following variables return empty instead of their correct values
+        ('dfrsp', "1"), # tjs['dfrsp']),
+        ('wrap', "1"),# tjs['wrap']),
+        ('aps', "0"), # tjs['aps']),
+        ('biaexp', 'b'),
+        ('desktopadclickablecontentexp', 'b'),
+        ('discussionsciexp', 'b'),
+        ('litexp', 'a'),
+        ('msvrtexp', 'b'),
+        ('searchbarexp', 'b'),
+        ('weatherexp', 'b'),
+        ('you_news_verticalexp', 'b'),
+    ]
 
-def _get_tjs_vals(query) -> dict[str, str]:
+def _get_tjs_params(query) -> list[tuple[str, str]]:
     """Obtains the variables required to invoke t.js on DuckDuckGo"""
     res = requests.post('https://duckduckgo.com/', data={'q': query})
     text = res.text
     tjs = _get_all_tjs(text)
     js = _get_all_javascript_var(text)
-    return {
-        'q': tjs['q'],
-        't': 'D', # tjs['t']
-        'l': tjs['l'],
-        's': tjs['s'],
-        'a': js['ra'],
-        'ct': tjs['ct'],
-        'bing_market': tjs['bing_market'],
-        'p_ent': tjs['p_ent'],
-        'ex': tjs['ex'],
-        'dp': tjs['dp'],
-        'perf_id': tjs['perf_id'],
-        'parent_perf_id': tjs['parent_perf_id'],
-        'perf_sampled': tjs['perf_sampled'],
-        'host_region': tjs['host_region'],
-        'sp': "0",# tjs['sp'],
-        'baa': '1',
-        'aps': "0", # tjs['aps'],
-        'biaexp': 'b',
-        'desktopadclickablecontentexp': 'b',
-        'discussionsciexp': 'b',
-        'litexp': 'a',
-        'msvrtexp': 'b',
-        'searchbarexp': 'b',
-        'weatherexp': 'b',
-        'you_news_verticalexp': 'b',
-    }
+    return [
+        ('q', tjs['q']),
+        ('t', 'D'), # tjs['t']
+        ('l', tjs['l']),
+        ('s', tjs['s']),
+        ('a', js['ra']),
+        ('ct', tjs['ct']),
+        ('bing_market', tjs['bing_market']),
+        ('p_ent', tjs['p_ent']),
+        ('ex', tjs['ex']),
+        ('dp', tjs['dp']),
+        ('perf_id', tjs['perf_id']),
+        ('parent_perf_id', tjs['parent_perf_id']),
+        ('perf_sampled', tjs['perf_sampled']),
+        ('host_region', tjs['host_region']),
+        ('sp', "0"), # tjs['sp']),
+        ('baa', '1'),
+        ('aps', "0"), # tjs['aps']),
+        ('biaexp', 'b'),
+        ('desktopadclickablecontentexp', 'b'),
+        ('discussionsciexp', 'b'),
+        ('litexp', 'a'),
+        ('msvrtexp', 'b'),
+        ('searchbarexp', 'b'),
+        ('weatherexp', 'b'),
+        ('you_news_verticalexp', 'b'),
+    ]
 
-def resolve_duckduckgo(query) -> str:
-    res = requests.post('https://duckduckgo.com/', data={'q': query})
+def resolve_duckduckgo(query: str) -> str:
+    res = requests.post('https://duckduckgo.com/', data={'q': query}, headers=headers.DEFAULT)
     return res.text
-
-def get_vqd(query) -> str:
-    """
-    Obtains the VQD key from DuckDuckGo
-     
-    The VQD key is required for image 
-    search requests. Just put the query
-    for the image request into here
-    to use the key later.
-
-    Args:
-        query: The search query. This should be the same 
-            as the search query for the image search request.
-    
-    """
-    return _get_all_javascript_var(resolve_duckduckgo(query))['vqd']
 
 def _exp_web_search(query, delay: int = 1):
     """Maybe new web search method. For some reason the returned JavaScript has empty values."""
-    params = _get_djs_keyvals(query)
+    params = _get_djs_params(query)
     time.sleep(0.2)
     res = requests.get(
             'https://duckduckgo.com/d.js', 
@@ -285,11 +269,13 @@ def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', si
             This field is untested and may do nothing right now.
         delay: A fixed delay before the request is made to prevent getting blocked.
     """
+    # Obtain search variables for unofficial API calls 
+    raw_data = resolve_duckduckgo(query)
+    # tjs = _get_all_tjs(raw_data)
+    js = _get_all_javascript_var(raw_data)
+    
     # DuckDuckGo refuses large numbers of requests, this manages them.
     time.sleep(delay)
-
-    # This is required for the request
-    vqd = get_vqd(query)
 
     # Flags are assembled directly in a string
     flags = f'hide_ai_images:{int(hide_ai_images)}'
@@ -301,13 +287,17 @@ def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', si
 
     # Parameters sent with the POST request
     params = (
-        ('l', locale), # l : language/region
         ('o', 'json'), # o : probably the desired response format?
         ('q', query), # q : search query
-        ('vqd', vqd), # vqd : honestly don't know
+        ('l', locale), # l : language/region
+        ('p', '1'),
+        ('vqd', js['vqd']), # The search hash
+        ('ct', js['ct']), # country
+        # ('dp', tjs['dp']),
         ('f', flags), # f : filters (key:value,)
-        ('p', '1'), # ???
-        ('v7exp', 'a'), # ???
+        # ('bpia', '1'),
+        # ('a', 'h_'),
+        # ('v7exp', 'a'), 
     )
 
     # Attempts downloading the data

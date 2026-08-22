@@ -30,8 +30,8 @@ class TestMiscDuckDuckGo():
         data = duckdunk.download('https://duckduckgo.com/', duckdunk.headers.DEFAULT)
         assert type(data) == bytes 
 
-    def test_get_vqd(self):
-        assert type(duckdunk.get_vqd('cat')) == str
+    # def test_get_vqd(self):
+    #     assert type(duckdunk.get_vqd('cat')) == str
 
 class TestWebSearch():
     def test_web_search(self):
