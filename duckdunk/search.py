@@ -80,6 +80,7 @@ def get_vqd(query) -> str:
             as the search query for the image search request.
     
     """
+
     res = requests.post('https://duckduckgo.com/', data={'q': query})
     searchObj = re.search(r'vqd=\"(.+?)\"', res.text)
     
@@ -166,7 +167,7 @@ def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
     Returns:
         A list of links with titles and descriptions
     """
-    # DuckDuckGo refuses large numbers of requests, this manages them
+    # DuckDuckGo refuses large numbers of requests, so this delay tries to prevent that
     time.sleep(delay)
 
     # The search is made directly with a GET request
@@ -176,7 +177,7 @@ def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
     results = []
     # Every result in the list is in a `div` of class "links_main"
     # So, a "links_main" class is a container for the title, url, icon, and snippet.
-    for links in listing.find_all('div', {'class': re.compile('links_main*')}): # type: ignore
+    for links in listing.find_all('div', {'class': re.compile('links_main*')}):
         # The title has the class "result__a" for some reason
         title_obj = links.find('a', {'class': re.compile('result__a')})
         assert title_obj != None
@@ -195,7 +196,16 @@ def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
         results.append(DuckExternalLink(link_url, link_title, link_snippet))
     return results
 
-def image_search(query, hide_ai_images: bool = True, delay: int = 1) -> list[DuckImage]:
+def _validate_flag_enum(flag, valid: tuple) -> str:
+    flag = str(flag).title()
+    if flag != 'any':
+        if type(flag) != str:
+            raise TypeError(f"Argument 'time' has incorrect type \"{type(flag)}\", should be str.")
+        if flag not in valid:
+            raise ValueError(f"Time \"{flag}\" is not valid. Should be one of: {valid}")
+    return flag
+
+def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', size: str = 'Any', layout: str = 'Any', locale='us-en', delay: int = 1) -> list[DuckImage]:
     """
     Search the DuckDuckGo image database.
 
@@ -212,9 +222,24 @@ def image_search(query, hide_ai_images: bool = True, delay: int = 1) -> list[Duc
     Args:
         query: The search query. "Cat" will yield cat images.
         hide_ai_images: Whether or not to try hiding some AI images.
+        time_range: 
+            Time range of allowed results in the past day, month, or week.
+            Allowed values are 'Any', 'Day', 'Week', 'Month'.
+        size: 
+            The estimated size of the images returned.
+            Allowed values are 'Any', 'Small', 'Medium', 'Large', 'Wallpaper'.
+        layout:
+            The shape of the image results
+            Allowed values are 'Any', 'Square', 'Tall', 'Wide'.
+        locale: Changes the results to be catered toward a different region.
+            Make sure to enter a valid ISO 639 language code preceded
+            by a valid ISO 3166 code.
+             
+            Not all languages/regions are supported by search engines.
+            This field is untested and may do nothing right now.
         delay: A fixed delay before the request is made to prevent getting blocked.
     """
-    # DuckDuckGo refuses large numbers of requests, this manages them
+    # DuckDuckGo refuses large numbers of requests, this manages them.
     time.sleep(delay)
 
     # This is required for the request
@@ -223,9 +248,22 @@ def image_search(query, hide_ai_images: bool = True, delay: int = 1) -> list[Duc
     # Flags are assembled directly in a string
     flags = f'hide_ai_images:{int(hide_ai_images)}'
 
+    time_range = _validate_flag_enum(time_range, ('Any', 'Day', 'Week', 'Month'))
+    if time_range != 'Any':
+        flags += ',time:{time}'
+
+    size = _validate_flag_enum(size, ('Any', 'Small', 'Medium', 'Large', 'Wallpaper'))
+    if size != 'Any':
+        flags += ',size:{size}'
+
+    # layout:Square
+    layout = _validate_flag_enum(layout, ('Any', 'Square', 'Tall', 'Wide'))
+    if layout != 'Any':
+            flags += ',layout:{layout}'
+
     # Parameters sent with the POST request
     params = (
-        ('l', 'us-en'), # l : locale
+        ('l', locale), # l : language/region
         ('o', 'json'), # o : probably the desired response format?
         ('q', query), # q : search query
         ('vqd', vqd), # vqd : honestly don't know
