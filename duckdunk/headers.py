@@ -36,7 +36,7 @@ DUCKDUCKGO_WEB_SEARCH = {
     'Sec-Fetch-Dest': 'script',
     'Sec-Fetch-Mode': 'cors',
     'Sec-Fetch-Site': 'same-site',
-    'Priority': 'u=5', # The actual priority usually seen is very high: 1
+    'Priority': 'u=1', # As it turns out, a priority of 1 is required to receive a response
     'TE': 'trailers', # https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/TE
 }
 
