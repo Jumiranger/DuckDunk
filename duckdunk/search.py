@@ -56,7 +56,7 @@ class DuckImage:
         else:
             return download_image(self.thumbnail)
 
-class DuckExternalLink:
+class DuckHTMLLink:
     """Container for link information."""
     def __init__(self, url: str, title: str, snippet: str = ''):
         self.url = url
@@ -68,6 +68,67 @@ class DuckExternalLink:
         """Downloads and parses the HTML from the external link."""
         return download_soup(self.url, headers)
 
+    def text(self, headers=None) -> str:
+        """Downloads text from the external link."""
+        return self.soup(headers).text
+
+class DuckDetailedLink:
+    """Container for detailed link information."""
+    def __init__(
+            self, 
+            snippet: str, # Called 'a'
+            ae: str, # Seemingly always null
+            formatted_heading: str, # Website title \t website URL
+            full_link: str, # Called 'c', includes the "https://"" prefix
+            partial_link: str, # Called 'd', does not include the "https://"" prefix
+            tags: list[str], # Called 'da', used on some sites, videos include many
+            h: int, # Always 0
+            home: str, # Called 'i', the normalized web link, e.g. "www.britannica.com"
+            m: int, # Always 0
+            o: int, # Always 0
+            p: int, # Always 0
+            s: int, # Always "bingv7aa"
+            title: str, # Called 't', this is the title of the result, e.g. "77 Cat Facts That Will Surprise Even Cat Lovers"
+            url: str, # Called 'u'. Seems identical to 'c' (full link)
+            ):
+        """
+        Initialize data arguments
+
+        Args:
+            snippet: Called 'a'
+            ae: Seemingly always null
+            formatted_heading: Called 'b'. Website title combined with the URL
+            full_link: Called 'c'. Includes the "https://"" prefix
+            partial_link: Called 'd'. Does not include the "https://"" prefix
+            tags: Called 'da'. used on some sites, videos include many
+            h: Always 0
+            home: Called 'i', the normalized web link, e.g. "www.britannica.com"
+            m: Always 0
+            o: Always 0
+            p: Always 0
+            s: Always "bingv7aa"
+            title: Called 't', this is the title of the result, e.g. "77 Cat Facts That Will Surprise Even Cat Lovers"
+            url: Called 'u'. Seems identical to 'c' (full link)
+        """
+        self.snippet = snippet
+        self.ae = ae
+        self.formatted_heading = formatted_heading
+        self.full_link = full_link
+        self.partial_link = partial_link
+        self.tags = tags
+        self.h = h
+        self.home = home
+        self.m = m
+        self.o = o
+        self.p = p
+        self.s = s
+        self.title = title
+        self.url = url
+
+    def soup(self, headers=None) -> BeautifulSoup:
+        """Downloads and parses the HTML from the external link."""
+        return download_soup(self.url, headers)
+    
     def text(self, headers=None) -> str:
         """Downloads text from the external link."""
         return self.soup(headers).text
@@ -86,42 +147,42 @@ def _get_all_javascript_var(text) -> dict[str, str]:
     return util.extract_dict(
         text, r'<script type="text/javascript">var ', r';function', ',', '=')
 
-def _get_djs_params(query) -> list[tuple[str, str]]:
+def _get_djs_params(query) -> dict[str, str]:
     """Obtains the variables required to invoke d.js on DuckDuckGo"""
     res = requests.post('https://duckduckgo.com/', data={'q': query})
     text = res.text
     tjs = _get_all_tjs(text)
     js = _get_all_javascript_var(text)
-    return [
-        ('q', tjs['q']),
-        ('t', 'D'), # tjs['t'] this variable is not always present
-        ('kl', tjs['l']),
-        ('l', tjs['l']),
-        ('s', tjs['s']),
-        ('a', js['ra']),
-        ('ct', tjs['ct']),
-        ('vqd', js['vqd']),
-        ('bing_market', tjs['bing_market']),
-        ('p_ent', tjs['p_ent']),
-        ('ex', tjs['ex']),
-        ('dp', tjs['dp']),
-        ('perf_id', tjs['perf_id']),
-        ('parent_perf_id', tjs['parent_perf_id']),
-        ('perf_sampled', tjs['perf_sampled']),
-        ('host_region', tjs['host_region']),
-        ('sp', "0"),# tjs['sp']), These following variables return empty instead of their correct values
-        ('dfrsp', "1"), # tjs['dfrsp']),
-        ('wrap', "1"),# tjs['wrap']),
-        ('aps', "0"), # tjs['aps']),
-        ('biaexp', 'b'),
-        ('desktopadclickablecontentexp', 'b'),
-        ('discussionsciexp', 'b'),
-        ('litexp', 'a'),
-        ('msvrtexp', 'b'),
-        ('searchbarexp', 'b'),
-        ('weatherexp', 'b'),
-        ('you_news_verticalexp', 'b'),
-    ]
+    return {
+        'q': tjs['q'],
+        't': 'D', # tjs['t'] this variable is not always present
+        'kl': tjs['l'],
+        'l': tjs['l'],
+        's': tjs['s'],
+        'a': js['ra'],
+        'ct': tjs['ct'],
+        'vqd': js['vqd'],
+        'bing_market': tjs['bing_market'],
+        'p_ent': tjs['p_ent'],
+        'ex': tjs['ex'],
+        'dp': tjs['dp'],
+        'perf_id': tjs['perf_id'],
+        'parent_perf_id': tjs['parent_perf_id'],
+        'perf_sampled': tjs['perf_sampled'],
+        'host_region': tjs['host_region'],
+        'sp': "0",# tjs['sp'], These following variables return empty instead of their correct values
+        'dfrsp': "1", # tjs['dfrsp'],
+        'wrap': "1",# tjs['wrap'],
+        'aps': "0", # tjs['aps'],
+        'biaexp': 'b',
+        'desktopadclickablecontentexp': 'b',
+        'discussionsciexp': 'b',
+        'litexp': 'a',
+        'msvrtexp': 'b',
+        'searchbarexp': 'b',
+        'weatherexp': 'b',
+        'you_news_verticalexp': 'b',
+    }
 
 def _get_tjs_params(query) -> list[tuple[str, str]]:
     """Obtains the variables required to invoke t.js on DuckDuckGo"""
@@ -157,22 +218,130 @@ def _get_tjs_params(query) -> list[tuple[str, str]]:
         ('you_news_verticalexp', 'b'),
     ]
 
+def set_tuple_params(params, key, value):
+    for i in range(len(params)):
+        item = params[i]
+        if item[0] == key:
+            params[i] = (key, value)
+
 def resolve_duckduckgo(query: str) -> str:
+    """Queries DuckDuckGo and returns the raw HTML"""
     res = requests.post('https://duckduckgo.com/', data={'q': query}, headers=headers.ALTERNATE)
     return res.text
 
-def _exp_web_search(query, delay: int = 1):
-    """Maybe new web search method. For some reason the returned JavaScript has empty values."""
+def web_search(
+        query, 
+        delay: int = 1,
+        time_frame: str = "Any",
+        locale: str | None = None, 
+        country: str | None = None, 
+        bing_market: str | None = None,
+        auto_configure_locale: bool = True,
+        strict_search: bool = False,
+        safe_search: bool = True,
+        ):
+    """
+    Searches for websites on DuckDuckGo given a query.
+    
+    Args:
+        query: The search query. Searching "cat facts" yields websites about cats
+        delay: An optional delay in seconds before the function runs
+        time_frame: Limits the time frame in which results became available.
+            Allowed values are: "Any", "Daily", "Weekly", "Monthly", "Yearly"
+            Optionally you may also enter: "", "a", "d", "w", "m", "y"
+            Only the first letter is checked
+        locale: Configures the locale setting of DuckDuckGo
+            Make sure to enter a valid ISO 639 language code preceded
+            by a valid ISO 3166 code, for example: us-en
+        country: The country code, another part of the locale settings.
+            Make sure to enter a valid ISO 3166 code, for example: US
+        bing_market: The locale for Bing, presumably for marketing, judging by the name.
+            Must be the reverse of locale: en-US.
+        auto_configure_locale: If set to True, `country` and `bing_market` will
+            be set automatically based on `locale`.
+        strict_search: Enables strict searching. This does nothing if safe search is disabled.
+            This is untested.
+        safe_search: When enabled, unsafe content is hidden. This is the default behavior.
+            Disabling this setting is untested.
+    """
     params = _get_djs_params(query)
-    time.sleep(0.2)
+
+    # Configure the time frame
+    allowed_timeframes = ('a', 'd', 'w', 'm', 'y')
+    if len(time_frame) > 0:
+        c = time_frame[0].lower()
+        if c in allowed_timeframes:
+            if c != 'a':
+                params['df'] = c
+        else:
+            raise ValueError(f"Timeframe {time_frame} not recognized. The first character must be one of: {allowed_timeframes}")
+
+    # Configure locale parameters
+    if locale != None:
+        params['l'] = locale.lower()
+        # The next two locale parameters can usually be assumed from the locale
+        if auto_configure_locale:
+            splits = locale.split('-')
+            params['ct'] = splits[0].upper()
+            params['bing_market'] = splits[1] + '-' + splits[0].upper()
+
+    if country != None:
+        params['ct'] = country.upper()
+    if bing_market != None:
+        params['bing_market'] = bing_market
+
+    # Enable strict searching
+    if safe_search:
+        if strict_search:
+            # This is the only variable that
+            # seems to change when strict
+            # searching is enabled.
+            params['p'] = '1'
+    else:
+        # This is the only variable that seems
+        # to change when safe search is disabled.
+        params['ex'] = '-2'
+
+    # Delay just because
+    time.sleep(delay)
+
+    # Make the request
     res = requests.get(
             'https://duckduckgo.com/d.js', 
             headers=headers.DUCKDUCKGO_WEB_SEARCH, 
             params=params
             )
-    return res.text
+    # Extract text from the result
+    result_text = res.text
 
-def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
+    # A summary answer is provided here
+    # instant_answer = util.extract_json(full, r'DDG\.deep\.deepPayload = ', r'\);DDG.duckbar')
+
+    # The website results are retreived and converted to Python objects
+    results = util.extract_json(result_text, r'DDG\.pageLayout\.load\(\'d\',', r'\);')
+    out = []
+    for item in results:
+        out.append(DuckDetailedLink(
+            item['a'],
+            item['ae'],
+            item['b'],
+            item['c'],
+            item['d'],
+            item['da'].split(','),
+            item['h'],
+            item['i'],
+            item['m'],
+            item['o'],
+            item['p'],
+            item['s'],
+            item['t'],
+            item['u']
+        ))
+
+    # The results are returned
+    return out
+
+def html_web_search(query, delay: int = 1) -> list[DuckHTMLLink]:
     """
     Performs a web search using DuckDuckGo and returns the result list.
 
@@ -217,7 +386,7 @@ def web_search(query, delay: int = 1) -> list[DuckExternalLink]:
         if snippet_obj != None:
             link_snippet = snippet_obj.text
         # The three variables are put into a container class
-        results.append(DuckExternalLink(link_url, link_title, link_snippet))
+        results.append(DuckHTMLLink(link_url, link_title, link_snippet))
     return results
 
 def _validate_flag_enum(flag, valid: tuple) -> str:

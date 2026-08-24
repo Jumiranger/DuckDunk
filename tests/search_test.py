@@ -37,7 +37,7 @@ class TestWebSearch():
     def test_web_search(self):
         results = duckdunk.web_search('cat facts')
         assert len(results) > 0
-        assert type(results[0]) == duckdunk.DuckExternalLink
+        assert type(results[0]) == duckdunk.DuckHTMLLink
 
     def test_download_search_result_site(self):
          results = duckdunk.web_search('cat facts')
