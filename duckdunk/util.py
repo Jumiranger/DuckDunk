@@ -17,17 +17,22 @@ def safe_split_keyvar(text: str, sep: str = '='):
             value = remove_quotes(str(split[1]))
     return {key: value}
 
-def search_between(text: str, start: str, end: str):
+def search_between(text: str, start: str, end: str, raise_exception=False) -> re.Match[str] | None:
     """Gets the text between two strings using re"""
     return re.search(start + r'(.+?)' + end, text)
 
+def search_between_strict(text: str, start: str, end: str) -> re.Match[str]:
+    """Obtains a substring within a regular expression. Raises an exception on failure."""
+    exp = start + r'(.+?)' + end
+    search = re.search(exp, text)
+    if not search:
+        raise Exception(f"Could not find substring for expression \"{exp}\" in string of length {len(text)}. Did the page load incorrectly?")
+    return search
+
 def extract_json(text: str, start: str, end: str) -> dict:
     """Obtains a JSON object from the text that lies within start and end."""
-    search = search_between(text, start, end)
-    if not search:
-        raise Exception(f"Could not find content that fit the expression \"{start + r'(.+?)' + end}\". Did the page load incorrectly?")
-    string = search.group(0)
-    js = json.loads(string)
+    substring = search_between_strict(text, start, end)
+    js = json.loads(substring.group(1))
     return js
 
 def extract_dict(text: str, start: str, end: str, delimiter: str, sep: str = '=') -> dict[str, str]:
@@ -59,11 +64,7 @@ def extract_dict(text: str, start: str, end: str, delimiter: str, sep: str = '='
         Dictionary equivelant of expression result
     """
     # Search for the content within start...end
-    searchKey = start + r'(.+?)' + end
-    searchObj = re.search(searchKey, text)
-    # The whole program would break in this case
-    if not searchObj:
-        raise Exception(f"Could not find content that fit the expression \"{searchKey}\". Did the page load incorrectly?")
+    searchObj = search_between_strict(text, start, end)
     group = searchObj.group(1)
 
     # Splits the items, so that a=1,b=2 might become ('a=1', 'b=2')

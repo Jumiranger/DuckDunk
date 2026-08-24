@@ -305,11 +305,13 @@ def web_search(
     # Delay just because
     time.sleep(delay)
 
+    tparams = [(key, value) for key, value in params.items()]
+
     # Make the request
     res = requests.get(
             'https://duckduckgo.com/d.js', 
             headers=headers.DUCKDUCKGO_WEB_SEARCH, 
-            params=params
+            params=tparams
             )
     # Extract text from the result
     result_text = res.text
@@ -395,7 +397,7 @@ def _validate_flag_enum(flag, valid: tuple) -> str:
         if type(flag) != str:
             raise TypeError(f"Argument has incorrect type \"{type(flag)}\", should be str.")
         if flag not in valid:
-            raise ValueError(f"Time \"{flag}\" is not valid. Should be one of: {valid}")
+            raise ValueError(f"Flag \"{flag}\" is not valid. Should be one of: {valid}")
     return flag
 
 def _try_add_string_flag(key, flag, valid: tuple):
