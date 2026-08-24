@@ -37,6 +37,11 @@ class TestWebSearch():
     def test_web_search(self):
         results = duckdunk.web_search('cat facts')
         assert len(results) > 0
+        assert type(results[0]) == duckdunk.DuckDetailedLink
+
+    def test_html_web_search(self):
+        results = duckdunk.html_web_search('cat facts')
+        assert len(results) > 0
         assert type(results[0]) == duckdunk.DuckHTMLLink
 
     def test_download_search_result_site(self):
@@ -47,7 +52,7 @@ class TestWebSearch():
 
 class TestImageSearch():
     def test_image_search(self):
-        results = duckdunk.image_search('cat')
+        results = duckdunk.image_search('cat facts')
         assert len(results) > 0
         assert type(results[0]) == duckdunk.DuckImage
 

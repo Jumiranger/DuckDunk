@@ -1,4 +1,5 @@
 import json
+import logging
 import requests
 import re
 from bs4 import BeautifulSoup
@@ -8,6 +9,7 @@ import time
 import duckdunk.headers as headers
 from duckdunk.download import download_image, download_soup
 import duckdunk.util as util
+from w3lib.url import canonicalize_url
 
 class DuckImage:
     def __init__(self, encoding: str, width: int, height: int, thumbnail: str, url: str, title: str, image: str):
@@ -149,13 +151,13 @@ def _get_all_javascript_var(text) -> dict[str, str]:
 
 def _get_djs_params(query) -> dict[str, str]:
     """Obtains the variables required to invoke d.js on DuckDuckGo"""
-    res = requests.post('https://duckduckgo.com/', data={'q': query})
+    res = requests.post('https://duckduckgo.com/', data={'q': canonicalize_url(query)})
     text = res.text
     tjs = _get_all_tjs(text)
     js = _get_all_javascript_var(text)
     return {
         'q': tjs['q'],
-        't': 'D', # tjs['t'] this variable is not always present
+        # 't': 'D', # tjs['t'] this variable is not always present
         'kl': tjs['l'],
         'l': tjs['l'],
         's': tjs['s'],
@@ -165,9 +167,9 @@ def _get_djs_params(query) -> dict[str, str]:
         'bing_market': tjs['bing_market'],
         'p_ent': tjs['p_ent'],
         'ex': tjs['ex'],
-        'dp': tjs['dp'],
+        'dp': tjs['dp'], # The dp variable never seems correct, but it is required and works anyway to make the request
         'perf_id': tjs['perf_id'],
-        'parent_perf_id': tjs['parent_perf_id'],
+        'parent_perf_id': tjs['parent_perf_id'], # The perf variables are always incorrect
         'perf_sampled': tjs['perf_sampled'],
         'host_region': tjs['host_region'],
         'sp': "0",# tjs['sp'], These following variables return empty instead of their correct values
@@ -186,7 +188,7 @@ def _get_djs_params(query) -> dict[str, str]:
 
 def _get_tjs_params(query) -> list[tuple[str, str]]:
     """Obtains the variables required to invoke t.js on DuckDuckGo"""
-    res = requests.post('https://duckduckgo.com/', data={'q': query})
+    res = requests.post('https://duckduckgo.com/', data={'q': canonicalize_url(query)})
     text = res.text
     tjs = _get_all_tjs(text)
     js = _get_all_javascript_var(text)
@@ -226,7 +228,7 @@ def set_tuple_params(params, key, value):
 
 def resolve_duckduckgo(query: str) -> str:
     """Queries DuckDuckGo and returns the raw HTML"""
-    res = requests.post('https://duckduckgo.com/', data={'q': query}, headers=headers.ALTERNATE)
+    res = requests.post('https://duckduckgo.com/', data={'q': query}, headers=headers.DEFAULT)
     return res.text
 
 def web_search(
@@ -242,6 +244,12 @@ def web_search(
         ):
     """
     Searches for websites on DuckDuckGo given a query.
+
+    This function does not work with spaces in the query.
+    Every other query (except probably special characters)
+    seems to work fine.
+    It is NOT a mismatch between VQD and the query, I found
+    out that gives an error rather than an empty output.
     
     Args:
         query: The search query. Searching "cat facts" yields websites about cats
@@ -265,7 +273,7 @@ def web_search(
             Disabling this setting is untested.
     """
     params = _get_djs_params(query)
-
+    
     # Configure the time frame
     allowed_timeframes = ('a', 'd', 'w', 'm', 'y')
     if len(time_frame) > 0:
@@ -323,22 +331,25 @@ def web_search(
     results = util.extract_json(result_text, r'DDG\.pageLayout\.load\(\'d\',', r'\);')
     out = []
     for item in results:
-        out.append(DuckDetailedLink(
-            item['a'],
-            item['ae'],
-            item['b'],
-            item['c'],
-            item['d'],
-            item['da'].split(','),
-            item['h'],
-            item['i'],
-            item['m'],
-            item['o'],
-            item['p'],
-            item['s'],
-            item['t'],
-            item['u']
-        ))
+        try:
+            out.append(DuckDetailedLink(
+                item['a'] if 'a' in item.keys() else '', # Not all results will have previews
+                item['ae'],
+                '', # item['b'],
+                item['c'],
+                item['d'],
+                item['da'].split(','),
+                item['h'],
+                item['i'],
+                0, # int(item['m']),
+                0, # int(item['o']),
+                0, # int(item['p']),
+                0, # int(item['s']),
+                item['t'],
+                item['u']
+            ))
+        except:
+            logging.debug("Discarded an invalid link")
 
     # The results are returned
     return out

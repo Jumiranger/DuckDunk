@@ -9,8 +9,7 @@ DEFAULT = {
 
 ALTERNATE = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:154.0) Gecko/20100101 Firefox/154.0', 
-    'Accept': '*/*;q=0.8', # image/gif,image/apng,image/avif,image/webp,image/png,image/jpeg,text/html,application/xhtml+xml,application/xml;q=0.9,
-    # 'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+    'Accept': '*/*;q=0.8',
     'Accept-Language': 'en-US,en;q=0.8',
     'Connection': 'keep-alive',
     }
