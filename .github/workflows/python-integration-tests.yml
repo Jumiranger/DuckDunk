@@ -22,11 +22,11 @@ jobs:
         run: |
           pip install pytest
           pip install -r requirements.txt
-          pytest --junitxml=output/test/.test-results.xml
+          pytest --junitxml=output/test/test-results.xml
           
       - name: Upload pytest test results
         uses: actions/upload-artifact@v4
         with:
           name: pytest-results
-          path: output/test/.test-results.xml
+          path: output/test/test-results.xml
         if: ${{ always() }}
