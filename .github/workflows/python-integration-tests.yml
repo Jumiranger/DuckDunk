@@ -18,10 +18,13 @@ jobs:
         with:
           python-version: 3.13
       
-      - name: Test with pytest
+      - name: Install requirements
         run: |
           pip install pytest
           pip install -r requirements.txt
+
+      - name: Test with pytest
+        run: |
           pytest --junitxml=output/test/test-results.xml
           
       - name: Upload pytest test results

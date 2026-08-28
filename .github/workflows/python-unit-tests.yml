@@ -18,18 +18,26 @@ jobs:
         with:
           python-version: 3.13
       
-      - name: Test with pytest
+      - name: Install requirements
         run: |
           pip install -r requirements.txt
           pip install coverage
-          coverage run -m unittest discover -s "./tests/unit"
-          mkdir -p output/test/
-          touch output/test/.coverage-report.xml
-          # coverage report -m > output/test/coverage_report.txt
-          coverage xml -o output/test/coverage-report.xml
 
-      - name: Upload coverage report XML
+      - name: Test with pytest
+        run: |
+          coverage run -m unittest discover -s "./tests/unit"
+          
+      - name: Write coverage report
+        run: |
+          # mkdir -p output/test/
+          # touch output/test/.coverage-report.txt
+          coverage report -m > output/test/coverage-report.txt
+          # The XML is not particularly useful right now
+          # coverage xml -o output/test/coverage-report.xml
+          cat output/test/coverage-report.txt
+
+      - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report-xml
-          path: output/test/coverage-report.xml
+          path: output/test/coverage-report.txt
