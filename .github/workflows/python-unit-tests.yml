@@ -26,7 +26,7 @@ jobs:
           mkdir -p output/test/
           touch output/test/.coverage-report.xml
           # coverage report -m > output/test/coverage_report.txt
-          coverage xml output/test/coverage-report.xml
+          coverage xml -o output/test/coverage-report.xml
 
       - name: Upload coverage report XML
         uses: actions/upload-artifact@v4
