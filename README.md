@@ -1,7 +1,7 @@
 # DuckDunk
 
 [![Unit Tests](https://github.com/Jumiranger/DuckDunk/actions/workflows/python-unit-tests.yml/badge.svg)](https://github.com/Jumiranger/DuckDunk/actions/workflows/python-unit-tests.yml)
-![PyPI Version](https://img.shields.io/pypi/v/duckdunk)
+[![PyPI Version](https://img.shields.io/pypi/v/duckdunk)](https://pypi.org/project/duckdunk/)
 
 Searching the web should be easy. DuckDunk provides dead simple DuckDuckGo 
 querying for webpages and images.
