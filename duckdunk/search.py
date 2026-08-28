@@ -140,6 +140,16 @@ class PageRefusalException(Exception):
     def __init__(self, text: str):
         super().__init__(text)
 
+def resolve_duckduckgo(query: str, headers=None) -> str:
+    """Queries DuckDuckGo and returns the raw HTML"""
+    url = 'https://duckduckgo.com/'
+    data = {'q': query}
+    if headers == None:
+        res = requests.post(url, data=data)
+    else:
+        res = requests.post(url, data=data, headers=headers)
+    return res.text
+
 def _get_all_tjs(text) -> dict[str, str]:
     """Get all variables sent to DuckDuckGo's t.js"""
     return util.extract_dict(text, r'/t\.js\?', r'></script>', '&', '=')
@@ -149,10 +159,9 @@ def _get_all_javascript_var(text) -> dict[str, str]:
     return util.extract_dict(
         text, r'<script type="text/javascript">var ', r';function', ',', '=')
 
-def _get_djs_params(query) -> dict[str, str]:
+def _get_djs_params(query, headers=None) -> dict[str, str]:
     """Obtains the variables required to invoke d.js on DuckDuckGo"""
-    res = requests.post('https://duckduckgo.com/', data={'q': query})
-    text = res.text
+    text = resolve_duckduckgo(query, headers=headers)
     tjs = _get_all_tjs(text)
     js = _get_all_javascript_var(text)
     return {
@@ -192,14 +201,9 @@ def set_tuple_params(params, key, value):
         if item[0] == key:
             params[i] = (key, value)
 
-def resolve_duckduckgo(query: str) -> str:
-    """Queries DuckDuckGo and returns the raw HTML"""
-    res = requests.post('https://duckduckgo.com/', data={'q': query}, headers=headers.DEFAULT)
-    return res.text
-
 def web_search(
         query, 
-        delay: int = 1,
+        delay: float = 3,
         time_frame: str = "Any",
         locale: str | None = None, 
         country: str | None = None, 
@@ -322,7 +326,7 @@ def web_search(
     # The results are returned
     return out
 
-def html_web_search(query, delay: int = 1) -> list[DuckHTMLLink]:
+def html_web_search(query, delay: float = 3) -> list[DuckHTMLLink]:
     """
     Performs a web search using DuckDuckGo and returns the result list.
 
@@ -341,7 +345,7 @@ def html_web_search(query, delay: int = 1) -> list[DuckHTMLLink]:
     time.sleep(delay)
 
     # The search is made directly with a GET request
-    url = f'http://duckduckgo.com/html/?q={query}'
+    url = canonicalize_url(f'http://duckduckgo.com/html/?q={query}')
     listing = download_soup(url, headers.DEFAULT)
 
     containers = listing.find_all('div', {'class': re.compile('links_main*')})
@@ -385,7 +389,7 @@ def _try_add_string_flag(key, flag, valid: tuple):
         return f',{key}:{flag}'
     return ''
 
-def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', size: str = 'Any', layout: str = 'Any', locale='us-en', delay: int = 1) -> list[DuckImage]:
+def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', size: str = 'Any', layout: str = 'Any', locale='us-en', delay: float = 3) -> list[DuckImage]:
     """
     Search the DuckDuckGo image database.
 
