@@ -1,5 +1,6 @@
 # DuckDunk
-Searching the web should be easy. DuckDunk provides dead simple DuckDuckGo querying for webpages and images.
+Searching the web should be easy. DuckDunk provides dead simple DuckDuckGo 
+querying for webpages and images.
 
 ## Installation
 
@@ -7,6 +8,9 @@ Easily install with pip through [PyPI](https://pypi.org/project/duckdunk/):
 ```
 pip install duckdunk
 ```
+
+Please refer to the README on the [PyPI](https://pypi.org/project/duckdunk/) 
+page for instructions for the correct version.
 
 ## Usage
 
@@ -23,6 +27,25 @@ print(results[0].url)
 print(results[0].text())
 ```
 
+### Advanced search
+
+The old search has been replaced with `duckdunk.html_web_search` in the 
+latest source files. In the latest version, the web search can be provided 
+multiple parameters to customize the search, for example:
+
+```python
+latest_cat_pages = duckdunk.web_search(
+    query='cats',
+    time_frame='Day',
+    locale='cn-zh',
+    strict_search=True,
+  )
+
+```
+
+> **Warning**: Website searches with spaces, e.g. "cat facts" or "cat+facts"
+  do not work right now. Using other separators like "cat,facts" still seems to work.
+
 ### Using image search results:
 
 ```python
@@ -34,6 +57,20 @@ results = duckdunk.image_search('cat')
 img = results[0].download()
 img.show()
 ```
+### Advanced image search
+
+Image search parameters allow for very specific image queries:
+```python
+recent_cat_wallpapers = duckdunk.image_search(
+    query='cat',
+    time_range='Week',
+    size='Wallpaper',
+    layout='Wide',
+    locale='us-en',
+  )
+```
+
+Image searching supports spaces.
 
 ## About
 
@@ -44,6 +81,12 @@ The goal of this project is to bring a complete set of web search tools to Pytho
 currently through the use of the DuckDuckGo search engine. Right now the aim
 is to support most essential DuckDuckGo features through a human-friendly library.
 
+The goals are:
+- To be entirely free to use
+- To be the most feature-complete web search tool for Python
+- To encourage responsible use of any utilized search engine
+- To remain simple
+
 ## A word of warning
 
 Requests are purposely delayed. Sending many simultaneous requests 
@@ -53,5 +96,5 @@ problematic requests, and DuckDuckGo will temporarily block the client.
 If you don't plan to make many requests, this delay can be removed: 
 ```duckdunk.web_search('cat facts', delay=0)```
 
-The downloads for image previews from Bing could probably be threaded safely,
-but for the time being they are downloaded one at a time.
+If you need more speed when downloading images, the downloads for image 
+previews from Bing could probably be threaded safely.
