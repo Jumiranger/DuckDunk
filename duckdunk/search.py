@@ -151,7 +151,7 @@ def _get_all_javascript_var(text) -> dict[str, str]:
 
 def _get_djs_params(query) -> dict[str, str]:
     """Obtains the variables required to invoke d.js on DuckDuckGo"""
-    res = requests.post('https://duckduckgo.com/', data={'q': canonicalize_url(query)})
+    res = requests.post('https://duckduckgo.com/', data={'q': query})
     text = res.text
     tjs = _get_all_tjs(text)
     js = _get_all_javascript_var(text)
@@ -185,40 +185,6 @@ def _get_djs_params(query) -> dict[str, str]:
         'weatherexp': 'b',
         'you_news_verticalexp': 'b',
     }
-
-def _get_tjs_params(query) -> list[tuple[str, str]]:
-    """Obtains the variables required to invoke t.js on DuckDuckGo"""
-    res = requests.post('https://duckduckgo.com/', data={'q': canonicalize_url(query)})
-    text = res.text
-    tjs = _get_all_tjs(text)
-    js = _get_all_javascript_var(text)
-    return [
-        ('q', tjs['q']),
-        ('t', 'D'), # tjs['t']
-        ('l', tjs['l']),
-        ('s', tjs['s']),
-        ('a', js['ra']),
-        ('ct', tjs['ct']),
-        ('bing_market', tjs['bing_market']),
-        ('p_ent', tjs['p_ent']),
-        ('ex', tjs['ex']),
-        ('dp', tjs['dp']),
-        ('perf_id', tjs['perf_id']),
-        ('parent_perf_id', tjs['parent_perf_id']),
-        ('perf_sampled', tjs['perf_sampled']),
-        ('host_region', tjs['host_region']),
-        ('sp', "0"), # tjs['sp']),
-        ('baa', '1'),
-        ('aps', "0"), # tjs['aps']),
-        ('biaexp', 'b'),
-        ('desktopadclickablecontentexp', 'b'),
-        ('discussionsciexp', 'b'),
-        ('litexp', 'a'),
-        ('msvrtexp', 'b'),
-        ('searchbarexp', 'b'),
-        ('weatherexp', 'b'),
-        ('you_news_verticalexp', 'b'),
-    ]
 
 def set_tuple_params(params, key, value):
     for i in range(len(params)):
@@ -255,7 +221,7 @@ def web_search(
         query: The search query. Searching "cat facts" yields websites about cats
         delay: An optional delay in seconds before the function runs
         time_frame: Limits the time frame in which results became available.
-            Allowed values are: "Any", "Daily", "Weekly", "Monthly", "Yearly"
+            Allowed values are: "Any", "Day", "Week", "Month", "Year"
             Optionally you may also enter: "", "a", "d", "w", "m", "y"
             Only the first letter is checked
         locale: Configures the locale setting of DuckDuckGo
@@ -273,6 +239,8 @@ def web_search(
             Disabling this setting is untested.
     """
     params = _get_djs_params(query)
+    # This line may or may not help
+    params['q'] = query
     
     # Configure the time frame
     allowed_timeframes = ('a', 'd', 'w', 'm', 'y')
@@ -310,10 +278,10 @@ def web_search(
         # to change when safe search is disabled.
         params['ex'] = '-2'
 
+    tparams = [(key, value) for key, value in params.items()]
+
     # Delay just because
     time.sleep(delay)
-
-    tparams = [(key, value) for key, value in params.items()]
 
     # Make the request
     res = requests.get(
