@@ -5,7 +5,7 @@ DEFAULT = {
     'Accept-Language': 'en-US,en;q=0.8',
     'Connection': 'keep-alive',
     }
-"""Headers must be sent to most websites to say: "I'm not a bot."""
+"""Headers must be sent to most websites to say: "I'm not a bot." """
 
 ALTERNATE = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:154.0) Gecko/20100101 Firefox/154.0', 

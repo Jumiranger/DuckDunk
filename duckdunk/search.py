@@ -10,6 +10,7 @@ import duckdunk.headers as headers
 from duckdunk.download import download_image, download_soup
 import duckdunk.util as util
 from w3lib.url import canonicalize_url
+from requests.sessions import Session
 
 class DuckImage:
     def __init__(self, encoding: str, width: int, height: int, thumbnail: str, url: str, title: str, image: str):
@@ -144,26 +145,28 @@ def resolve_duckduckgo(query: str, headers=None) -> str:
     """Queries DuckDuckGo and returns the raw HTML"""
     url = 'https://duckduckgo.com/'
     data = {'q': query}
-    if headers == None:
-        res = requests.post(url, data=data)
-    else:
-        res = requests.post(url, data=data, headers=headers)
+    res = requests.post(url, data=data, headers=headers)
     return res.text
 
-def _get_all_tjs(text) -> dict[str, str]:
-    """Get all variables sent to DuckDuckGo's t.js"""
-    return util.extract_dict(text, r'/t\.js\?', r'></script>', '&', '=')
+def get_duckduckgo_session(query: str, headers=None) -> tuple[Session, str]:
+    session = Session()
+    res = requests.post('https://duckduckgo.com/', data={'q': query}, headers=headers)
+    return session, res.text
 
-def _get_all_javascript_var(text) -> dict[str, str]:
+def _get_all_tjs(page) -> dict[str, str]:
+    """Get all variables sent to DuckDuckGo's t.js"""
+    return util.extract_dict(page, r'/t\.js\?', r'></script>', '&', '=')
+
+def _get_all_javascript_var(page) -> dict[str, str]:
     """Get unlabeled variables from DuckDuckGo"""
     return util.extract_dict(
-        text, r'<script type="text/javascript">var ', r';function', ',', '=')
+        page, r'<script type="text/javascript">var ', r';function', ',', '=')
 
-def _get_djs_params(query, headers=None) -> dict[str, str]:
+def _get_djs_params(page: str) -> dict[str, str]:
     """Obtains the variables required to invoke d.js on DuckDuckGo"""
-    text = resolve_duckduckgo(query, headers=headers)
-    tjs = _get_all_tjs(text)
-    js = _get_all_javascript_var(text)
+    # page = resolve_duckduckgo(query, headers=headers)
+    tjs = _get_all_tjs(page)
+    js = _get_all_javascript_var(page)
     return {
         'q': tjs['q'],
         # 't': 'D', # tjs['t'] this variable is not always present
@@ -242,7 +245,8 @@ def web_search(
         safe_search: When enabled, unsafe content is hidden. This is the default behavior.
             Disabling this setting is untested.
     """
-    params = _get_djs_params(query)
+    session, page = get_duckduckgo_session(query)
+    params = _get_djs_params(page)
     # This line may or may not help
     params['q'] = query
     
@@ -288,11 +292,13 @@ def web_search(
     time.sleep(delay)
 
     # Make the request
-    res = requests.get(
+    res = session.get(
             'https://duckduckgo.com/d.js', 
             headers=headers.DUCKDUCKGO_WEB_SEARCH, 
             params=tparams
             )
+    # This is the last time the session is used
+    session.close()
     # Extract text from the result
     result_text = res.text
 
@@ -424,7 +430,7 @@ def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', si
         delay: A fixed delay before the request is made to prevent getting blocked.
     """
     # Obtain search variables for unofficial API calls 
-    raw_data = resolve_duckduckgo(query)
+    session, raw_data = get_duckduckgo_session(query)
     # tjs = _get_all_tjs(raw_data)
     js = _get_all_javascript_var(raw_data)
     
@@ -455,11 +461,12 @@ def image_search(query, hide_ai_images: bool = True, time_range: str = 'Any', si
     )
 
     # Attempts downloading the data
-    res = requests.get(
+    res = session.get(
         'https://duckduckgo.com/i.js', 
         headers=headers.DUCKDUCKGO_IMAGE_SEARCH, 
         params=params
         )
+    session.close()
     data = json.loads(res.text);
 
     # Reassembles the dict list as an array of DuckImage objects
