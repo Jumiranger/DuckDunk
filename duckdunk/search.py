@@ -140,17 +140,10 @@ class PageRefusalException(Exception):
     """Exception for when the client is detected as a bot."""
     def __init__(self, text: str):
         super().__init__(text)
-
-def resolve_duckduckgo(query: str, headers=None) -> str:
-    """Queries DuckDuckGo and returns the raw HTML"""
-    url = 'https://duckduckgo.com/'
-    data = {'q': query}
-    res = requests.post(url, data=data, headers=headers)
-    return res.text
-
+ 
 def get_duckduckgo_session(query: str, headers=None) -> tuple[Session, str]:
     session = Session()
-    res = requests.post('https://duckduckgo.com/', data={'q': query}, headers=headers)
+    res = session.post('https://duckduckgo.com/', data={'q': query}, headers=headers)
     return session, res.text
 
 def _get_all_tjs(page) -> dict[str, str]:
