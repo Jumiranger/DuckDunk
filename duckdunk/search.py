@@ -34,7 +34,7 @@ class DuckImage:
         use the original image, use `thumbnail` instead."""
 
     def __repr__(self) -> str:
-        return f"DuckImage{self.__dict__}"
+        return f"DuckImage({self.image})"
 
     def download(self, original: bool = False) -> Image.Image:
         """
@@ -148,12 +148,12 @@ def get_duckduckgo_session(query: str, headers=None) -> tuple[Session, str]:
 
 def _get_all_tjs(page) -> dict[str, str]:
     """Get all variables sent to DuckDuckGo's t.js"""
-    return util.extract_dict(page, r'/t\.js\?', r'></script>', '&', '=')
+    return util.extract_dict(page, r'/t\.js\?', r'></script>', ['&amp;', '&'], '=')
 
 def _get_all_javascript_var(page) -> dict[str, str]:
     """Get unlabeled variables from DuckDuckGo"""
     return util.extract_dict(
-        page, r'<script type="text/javascript">var ', r';function', ',', '=')
+        page, r'<script type="text/javascript">var ', r';function', [','], '=')
 
 def _get_djs_params(page: str) -> dict[str, str]:
     """Obtains the variables required to invoke d.js on DuckDuckGo"""
@@ -191,12 +191,6 @@ def _get_djs_params(page: str) -> dict[str, str]:
         'you_news_verticalexp': 'b',
     }
 
-def set_tuple_params(params, key, value):
-    for i in range(len(params)):
-        item = params[i]
-        if item[0] == key:
-            params[i] = (key, value)
-
 def web_search(
         query, 
         delay: float = 3,
@@ -207,7 +201,7 @@ def web_search(
         auto_configure_locale: bool = True,
         strict_search: bool = False,
         safe_search: bool = True,
-        ):
+        ) -> list[DuckDetailedLink]:
     """
     Searches for websites on DuckDuckGo given a query.
 
@@ -279,6 +273,7 @@ def web_search(
         # to change when safe search is disabled.
         params['ex'] = '-2'
 
+    # This step might be unecessary
     tparams = [(key, value) for key, value in params.items()]
 
     # Delay just because
@@ -354,16 +349,16 @@ def html_web_search(query, delay: float = 3) -> list[DuckHTMLLink]:
     results = []
     # Every result in the list is in a `div` of class "links_main"
     # So, a "links_main" class is a container for the title, url, icon, and snippet.
-    for links in containers:
+    for container in containers:
         # The title has the class "result__a" for some reason
-        title_obj = links.find('a', {'class': re.compile('result__a')})
+        title_obj = container.find('a', {'class': re.compile('result__a')})
         assert title_obj != None
         # Both the text and URL are taken from the title link
         link_title = title_obj.text
         link_url = str(title_obj.get('href'))
         assert type(link_url) == str
         # The snippet makes more sense
-        snippet_obj = links.find('a', {'class': re.compile('result__snippet')})
+        snippet_obj = container.find('a', {'class': re.compile('result__snippet')})
         link_snippet = ''
         # In case the snippet is missing (which may never be the case),
         # the actual snippet is only assigned if the snippet was present.
@@ -373,11 +368,11 @@ def html_web_search(query, delay: float = 3) -> list[DuckHTMLLink]:
         results.append(DuckHTMLLink(link_url, link_title, link_snippet))
     return results
 
-def _validate_flag_enum(flag, valid: tuple) -> str:
+def _validate_flag_enum(flag, valid: tuple[str]) -> str:
     flag = str(flag).title()
     if flag != 'any':
-        if type(flag) != str:
-            raise TypeError(f"Argument has incorrect type \"{type(flag)}\", should be str.")
+        # if type(flag) != str:
+        #    raise TypeError(f"Argument has incorrect type \"{type(flag)}\", should be str.")
         if flag not in valid:
             raise ValueError(f"Flag \"{flag}\" is not valid. Should be one of: {valid}")
     return flag

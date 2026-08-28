@@ -5,3 +5,8 @@ description = "Powerful web searching using DuckDuckGo."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["pillow", "beautifulsoup4", "requests", "w3lib"]
+
+[tool.coverage.run]
+omit = [
+    "tests/*"
+]

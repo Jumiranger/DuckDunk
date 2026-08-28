@@ -17,10 +17,6 @@ def safe_split_keyvar(text: str, sep: str = '='):
             value = remove_quotes(str(split[1]))
     return {key: value}
 
-def search_between(text: str, start: str, end: str, raise_exception=False) -> re.Match[str] | None:
-    """Gets the text between two strings using re"""
-    return re.search(start + r'(.+?)' + end, text)
-
 def search_between_strict(text: str, start: str, end: str) -> re.Match[str]:
     """Obtains a substring within a regular expression. Raises an exception on failure."""
     exp = start + r'(.+?)' + end
@@ -35,7 +31,7 @@ def extract_json(text: str, start: str, end: str) -> dict:
     js = json.loads(substring.group(1))
     return js
 
-def extract_dict(text: str, start: str, end: str, delimiter: str, sep: str = '=') -> dict[str, str]:
+def extract_dict(text: str, start: str, end: str, delimiters: list[str], sep: str = '=') -> dict[str, str]:
     """
     Converts a string within `start` and `end` to a dictionary.
 
@@ -46,7 +42,7 @@ def extract_dict(text: str, start: str, end: str, delimiter: str, sep: str = '='
         "x = {'a': 1, 'b': 2}"
 
     You could parse it as an actual dictionary with:
-        extract_dict(my_string, "x = {", "}", ",", ":")
+        extract_dict(my_string, "x = {", "}", [","], ":")
 
     And you would be given:
         {'a': '1', 'b': '2'}
@@ -57,7 +53,8 @@ def extract_dict(text: str, start: str, end: str, delimiter: str, sep: str = '='
         text: The string to search
         start: Where the search pattern starts. Everything before the start match is ignored.
         end: Where the search pattern ends. Everything after the end match is ignored.
-        delimiter: The separator for each key-value pair, e.g. the ',' in x=1,y=2
+        delimiters: The separator for each key-value pair, e.g. the ',' in x=1,y=2
+            If there are mutliple delimiters, the first separator found is used.
         sep: The separator for the key and value, e.g. the '=' in x=1.
 
     Returns:
@@ -66,6 +63,13 @@ def extract_dict(text: str, start: str, end: str, delimiter: str, sep: str = '='
     # Search for the content within start...end
     searchObj = search_between_strict(text, start, end)
     group = searchObj.group(1)
+
+    # Uses the first delimiter found
+    delimiter = delimiters[0]
+    for d in delimiters:
+        if d in group:
+            delimiter = d
+            break
 
     # Splits the items, so that a=1,b=2 might become ('a=1', 'b=2')
     items = group.split(delimiter)

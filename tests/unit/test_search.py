@@ -1,68 +1,190 @@
 import unittest
 from unittest.mock import patch, Mock
-import requests
-import codecs
-import duckdunk
-from bs4 import BeautifulSoup
+import duckdunk.search
 from PIL.BmpImagePlugin import BmpImageFile
-
-GLOBAL_DOWNLOAD: bytes = b""
-GLOBAL_RESPONSE: str = "empty"
-GLOBAL_IMG: str = 'BM:\x00\x00\x00\x00\x00\x00\x006\x00\x00\x00(\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x18\x00\x00\x00\x00\x00\x00\x00\x00\x00Ä\x0e\x00\x00Ä\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00ÿÿÿ\x00'
-GLOBAL_RES = r'async="" src="/t.js?q=cat%20facts&amp;kl=br-pt&amp;l=br-pt&amp;s=0&amp;dl=en&amp;ct=US&amp;bing_market=pt-BR&amp;p_ent=&amp;ex=-1&amp;dp=t0km_000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000&amp;perf_id=0000000000000000&amp;parent_perf_id=0000000000000000&amp;perf_sampled=0&amp;host_region=usc&amp;dfrsp=1&amp;aps=0&amp;biaexp=b&amp;desktopadclickablecontentexp=b&amp;discussionsciexp=b&amp;litexp=b&amp;msvrtexp=b&amp;searchbarexp=b&amp;weatherexp=b&amp;you_news_verticalexp=b"></script><script type="text/javascript">var dc_enabled=1,dc_iu=false,baseLinkUrl="links.duckduckgo.com",baseLinkEnvName="prod",testTrafficType=0,rpl="1",fq=0,fd=1,it=0,iqa=0,iqbi=0,iqm=0,iqs=0,iqp=0,iqq=0,qw=2,dl="en",ct="US",server_detected_form_factor="desktop",iqd=0,r1hc=0,r1c=0,r2c,r3c=0,rq="cat%20facts",rqd="cat facts",rfq=0,rt="",ra="h_",rv="",rad="",rds=30,rs=0,spice_version="2000",spice_paths="{}",locale="en_US",settings_url_params={},rl="br-pt",shfl=1,shrl="us-en",rlo=0,df="",ds="",sfq="",iar="",vqd="4-268072618496410585329439251747045158338",safe_ddg=0,show_covid=0,perf_id="0000000000000000",parent_perf_id="0000000000000000",perf_sampled=0,ti,tig,y,y1,didNotLoadScripts=[],__DDG_BE_VERSION__="serp_20260822_035807_ET",__DDG_FE_CHAT_HASH__="hash";function handleScriptError(el)'
-
-def unescape(text: str) -> bytes:
-    """Converts a string into bytes, including any escaped characters"""
-    return codecs.escape_decode(text.encode('unicode_escape'))[0]
-
-class FakeResponse:
-    def __init__(self, text: str, code: int = 200):
-        self.text = text
-        self.code = code
-
-class FakeSession:
-    def __init__(self, return_vals: list = []) -> None:
-        self.return_vals = return_vals
-
-    def get(self, *_, **__) -> FakeResponse:
-        return FakeResponse(self.return_vals.pop(0))
-
-    def post(self, *_, **__) -> FakeResponse:
-        return FakeResponse(self.return_vals.pop(0))
-
-class TestDownload(unittest.TestCase):
-    @patch('duckdunk.download.download', Mock(return_value=b'test'))
-    def test_download_soup(self):
-        result = duckdunk.download_soup('')
-        self.assertEqual(type(result), BeautifulSoup)
-
-    @patch('duckdunk.download.download', Mock(return_value=unescape(GLOBAL_IMG)))
-    def test_download_image(self):
-        img = duckdunk.download_image('')
-        self.assertEqual(type(img), BmpImageFile)
-        self.assertTrue(hasattr(img, 'width'))
+from helper import *
 
 class TestDuckImage(unittest.TestCase):
-    @patch('duckdunk.download.download', Mock(return_value=unescape(GLOBAL_IMG)))
+    def test_duckimage_general_methods(self):
+        di = duckdunk.search.DuckImage('', 1, 1, '', '', '', '')
+        self.assertEqual(type(di.__repr__()), str)
+
+    @patch('duckdunk.download.download', Mock(return_value=unescape(DUMMY_IMG)))
     def test_download_from_duckimage(self):
-        di = duckdunk.DuckImage('', 1, 1, '', '', '', '')
+        di = duckdunk.search.DuckImage('', 1, 1, '', '', '', '')
         thumbnail = di.download()
         self.assertEqual(type(thumbnail), BmpImageFile)
+        original = di.download(original=True)
+        self.assertEqual(type(original), BmpImageFile)
 
 class TestDuckDetailedLink(unittest.TestCase):
     @patch('duckdunk.download.download', Mock(return_value=b'test'))
     def test_download_link(self):
-        dd = duckdunk.DuckDetailedLink('', '', '', '', '', [], 0, '', 0, 0, 0, 0, '', '')
+        dd = duckdunk.search.DuckDetailedLink('', '', '', '', '', [], 0, '', 0, 0, 0, 0, '', '')
         text = dd.text()
         self.assertEqual(text, 'test')
 
-class TestWebSearch(unittest.TestCase):
-    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_RES,])))
+class TestSessionAndSearchParameters(unittest.TestCase):
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES,])))
     def test_get_session(self):
-        session, text = duckdunk.get_duckduckgo_session('')
+        session, text = duckdunk.search.get_duckduckgo_session('')
         self.assertEqual(type(session), FakeSession)
-        self.assertEqual(text, GLOBAL_RES)
+        self.assertEqual(text, GLOBAL_DDG_RES)
 
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES,])))
+    def test_get_tjs(self):
+        _, text = duckdunk.search.get_duckduckgo_session('')
+        payload = duckdunk.search._get_all_tjs(text)
+        # Ensures the content loaded correctly
+        self.assertEqual(type(payload), dict)
+        # Test for first item
+        self.assertTrue('q' in payload.keys())
+        self.assertEqual(payload['q'], 'test')
+        # Test for middle item
+        self.assertTrue('l' in payload.keys())
+        self.assertEqual(payload['l'], 'br-pt')
+
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES,])))
+    def test_get_js_Vars(self):
+        _, text = duckdunk.search.get_duckduckgo_session('')
+        payload = duckdunk.search._get_all_javascript_var(text)
+        # Ensures the content loaded correctly
+        self.assertEqual(type(payload), dict)
+        # Test for first item
+        self.assertTrue('dc_enabled' in payload.keys())
+        self.assertEqual(payload['dc_enabled'], '1')
+        # Test for middle item
+        self.assertTrue('locale' in payload.keys())
+        self.assertEqual(payload['locale'], 'en_US')
+
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES,])))
+    def test_get_djs_params(self):
+         _, text = duckdunk.search.get_duckduckgo_session('')
+         payload = duckdunk.search._get_djs_params(text)
+         self.assertEqual(type(payload), dict)
+         self.assertTrue('q' in payload.keys())
+         self.assertEqual(payload['q'], 'test')
+
+class TestWebSearch(unittest.TestCase):
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES, GLOBAL_DDG_WEB_RESULTS])))
+    def test_web_search(self):
+        results = duckdunk.search.web_search('test', delay=0)
+        self.assertEqual(type(results), list)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(type(results[0]), duckdunk.DuckDetailedLink)
+        self.assertEqual(results[0].title, 'test')
+
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES, GLOBAL_DDG_WEB_RESULTS])))
+    def test_advanced_web_search(self):
+        results = duckdunk.search.web_search(
+            'test', 
+            delay=0, 
+            time_frame='Day',
+            locale='us-en',
+            strict_search=True,
+            safe_search=True,
+            )
+
+        self.assertEqual(type(results), list)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(type(results[0]), duckdunk.DuckDetailedLink)
+        self.assertEqual(results[0].title, 'test')
+
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES, GLOBAL_DDG_WEB_RESULTS])))
+    def test_advanced_web_search_alt(self):
+        results = duckdunk.search.web_search(
+            'test', 
+            delay=0, 
+            time_frame='Day',
+            locale='us-en',
+            bing_market='en-US',
+            country='US',
+            auto_configure_locale=False,
+            safe_search=False,
+            )
+
+        self.assertEqual(type(results), list)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(type(results[0]), duckdunk.DuckDetailedLink)
+        self.assertEqual(results[0].title, 'test')
+
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES, GLOBAL_DDG_WEB_RESULTS])))
+    @patch('duckdunk.download.download', Mock(side_effect=[b'test']))
+    def test_download_web_search(self):
+        results = duckdunk.search.web_search('test', delay=0)
+        text = results[0].text()
+        self.assertEqual(text, 'test')
+
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES, GLOBAL_DDG_ERROR_WEB_RESULTS])))
+    def test_web_search_errored_response(self):
+        results = duckdunk.search.web_search('test', delay=0)
+        self.assertEqual(type(results), list)
+        self.assertEqual(len(results), 0)
+
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES, GLOBAL_DDG_ERROR_WEB_RESULTS])))
+    def test_web_search_invalid_flags(self):
+        with self.assertRaises(ValueError):
+            duckdunk.search.web_search('test', time_frame='Z', delay=0)
+
+class TestHTMLSearch(unittest.TestCase):
+    @patch('duckdunk.download.download', Mock(return_value=GLOBAL_DDG_HTML_RESULTS.encode('utf-8')))
+    def test_html_web_search(self):
+        results = duckdunk.html_web_search('test', delay=0)
+        self.assertEqual(type(results), list)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(type(results[0]), duckdunk.DuckHTMLLink)
+        self.assertEqual(results[0].title, 'Test')
+        self.assertEqual(results[0].snippet, 'Testing')
+        self.assertEqual(results[0].url, 'https://en.wikipedia.org')
+
+    @patch('duckdunk.download.download', Mock(side_effect=[GLOBAL_DDG_HTML_RESULTS.encode('utf-8'), b'test']))
+    def test_download_html_web_search(self):
+        results = duckdunk.html_web_search('test', delay=0)
+        text = results[0].text()
+        self.assertEqual(text, 'test')
+
+    @patch('duckdunk.download.download', Mock(return_value=b''))
+    def test_failure_html_web_search(self):
+        with self.assertRaises(duckdunk.PageRefusalException):
+            duckdunk.html_web_search('test', delay=0)
+        
+        
+class TestImageSearch(unittest.TestCase):
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES, GLOBAL_DDG_IMAGE_RESULTS])))
+    def test_image_search(self):
+        results = duckdunk.image_search('test', delay=0)
+        self.assertEqual(type(results), list)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(type(results[0]), duckdunk.DuckImage)
+        self.assertEqual(results[0].title, 'Test')
+
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES, GLOBAL_DDG_IMAGE_RESULTS])))
+    def test_advanced_image_search(self):
+        results = duckdunk.image_search(
+            'test',
+            hide_ai_images=False,
+            time_range="Day",
+            locale="pt-br",
+            size="Small",
+            layout="Square",
+            delay=0,
+            )
+        self.assertEqual(type(results), list)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(type(results[0]), duckdunk.DuckImage)
+        self.assertEqual(results[0].title, 'Test')
+
+    @patch('duckdunk.search.Session', Mock(return_value=FakeSession([GLOBAL_DDG_RES, GLOBAL_DDG_IMAGE_RESULTS])))
+    @patch('duckdunk.download.download', Mock(return_value=unescape(DUMMY_IMG)))
+    def test_download_image_search(self):
+        results = duckdunk.image_search('test', delay=0)
+        img = results[0].download()
+        self.assertEqual(type(img), BmpImageFile)
+
+class TestSearchMiscMethods(unittest.TestCase):
+    def test_flag_validation_exceptions(self):
+        with self.assertRaises(ValueError):
+            duckdunk.search._validate_flag_enum('test', ('null',))
 
 if __name__ == '__main__':
     unittest.main()
