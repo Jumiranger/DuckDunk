@@ -1,4 +1,8 @@
 # DuckDunk
+
+[![Unit Tests](https://github.com/Jumiranger/DuckDunk/actions/workflows/python-unit-tests.yml/badge.svg)](https://github.com/Jumiranger/DuckDunk/actions/workflows/python-unit-tests.yml)
+![PyPI Version](https://img.shields.io/pypi/v/duckdunk)
+
 Searching the web should be easy. DuckDunk provides dead simple DuckDuckGo 
 querying for webpages and images.
 
@@ -81,6 +85,10 @@ The goals are:
 - To be the most feature-complete web search tool for Python
 - To encourage responsible use of any utilized search engine
 - To remain simple
+
+## Current functionality
+
+* Integration tests for the `Main` branch on commit `6aeb670` passed at 8/28/2026 4:16 PM on a Windows 10 physical machine.
 
 ## A word of warning
 
