@@ -43,9 +43,6 @@ latest_cat_pages = duckdunk.web_search(
 
 ```
 
-> **Warning**: Website searches with spaces, e.g. "cat facts" or "cat+facts"
-  do not work right now. Using other separators like "cat,facts" still seems to work.
-
 ### Using image search results:
 
 ```python
@@ -69,8 +66,6 @@ recent_cat_wallpapers = duckdunk.image_search(
     locale='us-en',
   )
 ```
-
-Image searching supports spaces.
 
 ## About
 
