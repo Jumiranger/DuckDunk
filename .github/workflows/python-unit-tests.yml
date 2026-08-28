@@ -29,8 +29,8 @@ jobs:
           
       - name: Write coverage report
         run: |
-          # mkdir -p output/test/
-          # touch output/test/.coverage-report.txt
+          mkdir -p output/test/
+          touch output/test/coverage-report.txt
           coverage report -m > output/test/coverage-report.txt
           # The XML is not particularly useful right now
           # coverage xml -o output/test/coverage-report.xml
