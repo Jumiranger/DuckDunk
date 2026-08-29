@@ -27,7 +27,7 @@ results = duckdunk.web_search('cat facts')
 # Obtain information such as the URL, title, and snippet from each result:
 print(results[0].title)
 print(results[0].url)
-# If you just want to downlaod the page text:
+# If you just want to download the page text:
 print(results[0].text())
 ```
 
